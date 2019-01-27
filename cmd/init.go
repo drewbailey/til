@@ -3,12 +3,9 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"io/ioutil"
+
+	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
-	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing/cache"
-	"gopkg.in/src-d/go-billy.v4/osfs"
-	"gopkg.in/src-d/go-git.v4/storage/filesystem"
 )
 
 var initCmd = &cobra.Command{
@@ -25,22 +22,20 @@ func init() {
 }
 
 func runInit(cmd *cobra.Command, args []string) {
-	// initialize a new repository in a location passed in via args
-
-	dir, err := ioutil.TempDir("", "til")
-	fs := osfs.New(dir)
-	dot, _ := fs.Chroot(".git")
-
-	st := filesystem.NewStorage(dot, cache.NewObjectLRUDefault())
-	repo, err := git.Init(st, nil)
-	// repo
-	// st := storage.Storer{}
-	_, err := git.PlainClone("/tmp/foo", false, &git.CloneOptions{
-		URL:      "https://github.com/src-d/go-git",
-		Progress: os.Stdout,
-	})
-	if err != nil {
-		fmt.Printf("Err %v", err)
+	validateDir := func(input string) error {
+		return os.Mkdir(input, os.ModePerm)
 	}
 
+	prompt := promptui.Prompt{
+		Label:    "Where would you like to save your TILs❓",
+		Validate: validateDir,
+	}
+
+	result, err := prompt.Run()
+	if err != nil {
+		fmt.Printf("Error creating new directory %v", err)
+		return
+	}
+
+	fmt.Printf("📓 Your TILs will be curated here: %v", result)
 }

@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"text/template"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )
@@ -18,17 +20,22 @@ var newCmd = &cobra.Command{
 	},
 }
 
+type Til struct {
+	Title string
+}
+
 func init() {
 	rootCmd.AddCommand(newCmd)
 }
 
 func runNewCmd(cobraCmd *cobra.Command, args []string) {
+	spew.Dump(args)
 	validate := func(input string) error {
 		return nil
 	}
 
 	prompt := promptui.Prompt{
-		Label:    "Number",
+		Label:    "Today I learned ✍️",
 		Validate: validate,
 	}
 
@@ -39,7 +46,21 @@ func runNewCmd(cobraCmd *cobra.Command, args []string) {
 
 	fmt.Printf("You chose %v", result)
 
-	cmd := exec.Command("nvim", "~/testfiletestfile.md")
+	tmplStruct := Til{Title: result}
+
+	tmpl := template.Must(template.ParseFiles("template.md"))
+
+	// temp file
+	tempFile, err := os.Create("/tmp/dat2")
+	defer tempFile.Close()
+	if err != nil {
+		fmt.Printf("Error")
+	}
+
+	tmpl.Execute(tempFile, tmplStruct)
+
+	tempFile.Close()
+	cmd := exec.Command("nvim", "/tmp/dat2")
 	cmd.Stdout, cmd.Stderr, cmd.Stdin = os.Stdout, os.Stderr, os.Stdin
 	if err := cmd.Run(); err != nil {
 		// fmt.De
